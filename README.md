@@ -1,5 +1,6 @@
 # Algo-Stock-Trader
 Honors by Contract Term Project for Advance Software Applications for Economics. Use alpha advantage API and pandas to collect, organize, and analyze stock data. Then create a stock trading strategy based off this data collected.
+![Logo](b1deb98a-13e6-4496-be39-0d01353a43f4.webp)
 
 ## Project Breakdown
 The project is divided into three parts, each worth 10 points:
