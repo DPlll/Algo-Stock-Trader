@@ -22,7 +22,8 @@ data, meta_data = ts.get_daily(symbol= stock_ticker, outputsize= data_option)
 data = data.head(1000)  # Take the first 1000 data points only
 
 # Print the data
-print(f"Data for {stock_ticker} :") 
+print("\nConnection to AlphaAdvantage API successful")
+print(f"\nBasic Abstracted Data for {stock_ticker} :") 
 print(data.head())
 
 # Save to CSV file for further analysis into the CSV_data_copies folder
@@ -65,3 +66,39 @@ def check_trading_signals(data):
 
 # Run the function to check for signals
 check_trading_signals(data)
+
+# Function to check RSI-based buy/sell signals across all rows, avoiding duplicates
+def scan_rsi_signals(data):
+    # Initialize lists for buy and sell dates
+    buy_dates = []
+    sell_dates = []
+    previous_signal = None  # Track the last signal type (Buy/Sell)
+
+    for i in range(1, len(data)):  # Start from the second row
+        rsi = data.iloc[i]['RSI']
+        date = data.index[i]
+
+        # Check for Buy Signal (RSI crossing below 30)
+        if rsi < 30 and previous_signal != 'Buy':
+            buy_dates.append(date)
+            previous_signal = 'Buy'
+        # Check for Sell Signal (RSI crossing above 70)
+        elif rsi > 70 and previous_signal != 'Sell':
+            sell_dates.append(date)
+            previous_signal = 'Sell'
+        # Reset the signal if RSI returns to neutral
+        elif 30 <= rsi <= 70:
+            previous_signal = None
+
+    # Print the results in chronological order
+    print("Historical RSI Signals in Chronological Order:")
+    for date in buy_dates:
+        print(f"RSI bellow 30: Buy {stock_ticker} on {date}")
+    for date in sell_dates:
+        print(f"RSI Above 70: Sell {stock_ticker} on {date}")
+
+    return buy_dates, sell_dates
+
+# Add to the end of the existing script
+print(f"\nScanning historical data collected on {stock_ticker} for RSI signals...\n")
+buy_dates, sell_dates = scan_rsi_signals(data)
