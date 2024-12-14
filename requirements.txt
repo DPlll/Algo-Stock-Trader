@@ -1,5 +1,4 @@
 pandas
-os
 alpha_vantage
-numpy
-sys
+matplotlib
+dotenv

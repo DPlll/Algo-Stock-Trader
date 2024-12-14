@@ -3,9 +3,7 @@
 # Honors Trading Algorithm Term Project
 # main file for project
 import pandas as pd
-import sys
 import os
-import random
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from alpha_vantage.timeseries import TimeSeries
