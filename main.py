@@ -18,7 +18,7 @@ API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 ts = TimeSeries(key=API_KEY, output_format='pandas')
 
 # Get the data for the stock of your choice
-stock_ticker = 'NVDA' # Change this to the stock ticker of your choice to pull data for that stock
+stock_ticker = 'APPL' # Change this to the stock ticker of your choice to pull data for that stock
 data_option = 'full' # Change this to 'full' for entire historical dataset keep 'compact' for the latest 100 data points
 data, meta_data = ts.get_daily(symbol= stock_ticker, outputsize= data_option)
 
@@ -38,14 +38,27 @@ print(f"Data saved to {stock_ticker}_data.csv.")
 # Calculate Moving Averages 
 data['50_MA'] = data['4. close'].rolling(window=50).mean()
 data['200_MA'] = data['4. close'].rolling(window=200).mean()
-# RSI Calculation (also used in the trading signals function)
 def calculate_rsi(data, window_length=14):
+    # Calculate the difference between consecutive closing prices
     delta = data['4. close'].diff(1)
-    gain = (delta.where(delta > 0, 0)).rolling(window=window_length).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=window_length).mean()
-    rs = gain / loss.replace(0, float('inf'))  # Prevent division by zero
-    return 100 - (100 / (1 + rs))
-data['RSI'] = calculate_rsi(data)  # Calculate RSI
+    # Separate gains (positive deltas) and losses (negative deltas)
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    # Initialize the average gain and average loss
+    avg_gain = gain.rolling(window=window_length, min_periods=window_length).mean()
+    avg_loss = loss.rolling(window=window_length, min_periods=window_length).mean()
+    # Apply smoothing for subsequent values
+    for i in range(window_length, len(data)):
+        avg_gain.iloc[i] = (avg_gain.iloc[i - 1] * (window_length - 1) + gain.iloc[i]) / window_length
+        avg_loss.iloc[i] = (avg_loss.iloc[i - 1] * (window_length - 1) + loss.iloc[i]) / window_length
+    # Calculate Relative Strength (RS)
+    rs = avg_gain / avg_loss.replace(0, float('inf'))  # Replace 0 losses to avoid division by zero
+    # Compute the RSI using the formula
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+# Add RSI to the DataFrame
+data['RSI'] = calculate_rsi(data)
+
 # ----- Function to check conditions and notify buy/sell signals ----- #
 def check_trading_signals(data):
     last_row = data.iloc[-1]
@@ -64,15 +77,14 @@ def check_trading_signals(data):
         print(f"Buy signal for {stock_ticker} - RSI below 30 (oversold).")
     elif last_row['RSI'] > 70:
         print(f"Sell signal for {stock_ticker} - RSI above 70 (overbought).")
-
 # Run the function to check for signals
 check_trading_signals(data)
 
 ## ----- Give by and sell signals for RSI based on Historical data ----- ##
-# Function to check RSI-based buy/sell signals across all rows, avoiding duplicates and neutralizing signals. Parameters: 
-# data (pd.DataFrame): DataFrame with stock prices and RSI values/// stock_ticker (str): Stock ticker symbol for reference in output/// 
-# rsi_low (int): Lower RSI threshold for buy signals/// rsi_high (int): Upper RSI threshold for sell signals.
-# Returns: list: A list of tuples containing the signal type, date, and details.
+#  check RSI buy/sell signals across all rows, avoiding duplicates and neutralizing signals. With CustomizableParameters: 
+# data (pd.DataFrame): DataFrame with stock prices and RSI values /// stock_ticker: Stock ticker symbol for reference in output /// 
+# rsi_low: Costamizable lower RSI threshold for buy signals/// rsi_high (int): Costomiizable upper RSI threshold for sell signals.
+# Returns: list: A list of tuples containing the signal type, date, and details to be used in following functions.
 def scan_rsi_signals(data, stock_ticker, rsi_low=30, rsi_high=70):
     # Initialize lists for buy and sell signals
     signals = []
@@ -103,11 +115,8 @@ def scan_rsi_signals(data, stock_ticker, rsi_low=30, rsi_high=70):
     for signal, date, details in signals:
         print(f"{signal:<10}{str(date):<30}{details}")
     print("=" * 50)
+    return signals 
 
-    return signals
-
-print(f"\nScanning historical data collected on {stock_ticker} for RSI signals...\n")
-signals = scan_rsi_signals(data, stock_ticker)
 
 
 ## ------ Calculate and graph the strategy returns ------- ##
@@ -118,38 +127,26 @@ def calculate_and_graph_strategy_returns(data, signals, stock_ticker):
     # Extract closing prices
     closing_prices = data['4. close']
     
-    # Initialize variables for tracking
-    cumulative_returns = []
+    # Initialize variables
     cash = 1  # Start with $1 initial investment
-    investment_price = None  # Price at which the last investment was made
-    cumulative_value = 1  # Start with $1
-    dates = []  # Dates for plotting
-
+    investment_price = None  # Track the buy price
+    cumulative_returns = [cash]  # Start tracking returns with initial $1
+    dates = [closing_prices.index[0]]  # First date for plotting
+    
     # Process each signal
     for signal, date, details in signals:
         price = closing_prices.loc[date]
         dates.append(date)
-        
         if signal == "Buy":
-            if investment_price is None:  # Avoid double buying
-                investment_price = price  # Invest at the current price
+            if investment_price is None:  # Only buy if no open position if open then skip to sell signal
+                investment_price = price
         elif signal == "Sell" and investment_price is not None:
-            # Calculate the return from the investment
+            # Calculate profit from the trade
             profit = (price - investment_price) / investment_price
-            cash += cumulative_value * profit
-            investment_price = None  # Reset the investment price
-            
-        # Update cumulative value based on cash and any ongoing investment
-        if investment_price is not None:
-            # Unrealized value of the current investment
-            unrealized_value = cumulative_value * (price / investment_price)
-        else:
-            # No ongoing investment
-            unrealized_value = 0
-
-        cumulative_value = cash + unrealized_value
-        cumulative_returns.append(cumulative_value)
-        
+            cash *= (1 + profit)  # Update cash with profit
+            investment_price = None  # Close the position
+        # Track cumulative returns
+        cumulative_returns.append(cash)
     # Plot the cumulative returns
     plt.figure(figsize=(10, 6))
     plt.plot(dates, cumulative_returns, label=f"Strategy Returns for {stock_ticker}")
@@ -160,11 +157,11 @@ def calculate_and_graph_strategy_returns(data, signals, stock_ticker):
     plt.legend()
     plt.grid()
     plt.show()
-    
-    print(f"\nTotal Returns for {stock_ticker}: ${cumulative_value:.2f} (Starting from $1)")
+    # Print the final returns
+    print(f"\nTotal Returns for {stock_ticker}: ${cash:.2f} (Starting from $1)")
 
-    
-# Add to the end of the existing script
+
+# Run the returns calculation and graphing function
 print(f"\nScanning historical data collected on {stock_ticker} for RSI signals...\n")
 signals = scan_rsi_signals(data, stock_ticker)
 
