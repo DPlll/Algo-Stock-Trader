@@ -1,4 +1,4 @@
 pandas
 alpha_vantage
 matplotlib
-dotenv
+python-dotenv
