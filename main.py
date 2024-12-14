@@ -4,13 +4,25 @@
 # main file for project
 import pandas as pd
 import os
-import matplotlib.pyplot as plt
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 from alpha_vantage.timeseries import TimeSeries
 
 # Load the API key from the .env file and set variables (you have to obtain your own API key from AlphaVantage & create new .env file to wokr this program)
-load_dotenv()
-API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+def load_api_key():
+    # Check if the .env file exists
+    if not os.path.exists(".env"):
+        raise FileNotFoundError( "Error: .env file not found. Please create a .env file with your API key.")
+    # Load the .env file
+    load_dotenv()
+    # Retrieve the API key
+    api_key = os.getenv("ALPHAVANTAGE_API_KEY")
+    if not api_key:
+        raise ValueError( "Error: API key not found. Ensure the .env file contains the key ALPHAVANTAGE_API_KEY.")
+    return api_key
+# Load the API key
+API_KEY = load_api_key()
+print("ENV & API key loaded successfully.")
 
 # Create a time series object with the API key and set the output format to pandas
 ts = TimeSeries(key=API_KEY, output_format='pandas')
@@ -19,6 +31,8 @@ ts = TimeSeries(key=API_KEY, output_format='pandas')
 stock_ticker = 'APPL' # Change this to the stock ticker of your choice to pull data for that stock
 data_option = 'full' # Change this to 'full' for entire historical dataset keep 'compact' for the latest 100 data points
 data, meta_data = ts.get_daily(symbol= stock_ticker, outputsize= data_option)
+if data.empty:
+    raise ValueError(f"Error: No data found on AlphaVantage for {stock_ticker}. Please check the stock ticker symbol.")
 
 # Limit the data to the first 1,000 rows
 data = data.head(1000)  # Take the first 1000 data points only
@@ -114,7 +128,6 @@ def scan_rsi_signals(data, stock_ticker, rsi_low=30, rsi_high=70):
         print(f"{signal:<10}{str(date):<30}{details}")
     print("=" * 50)
     return signals 
-
 
 
 ## ------ Calculate and graph the strategy returns ------- ##
