@@ -4,7 +4,68 @@
 
 ![Logo](b1deb98a-13e6-4496-be39-0d01353a43f4.webp)
 
-<p align="center"> Honors by Contract Term Project for Advance Software Applications for Economics. Use alpha advantage API and pandas to collect, organize, and analyze stock data. Then create a stock trading strategy based off this data collected. </p>
+<p align="center"> Honors by Contract Term Project for Advance Software Applications for Economics. Use alpha advantage API to collect, organize, and analyze stock data with a basic trading stategy. Then see how your strategy performs with the data collected on desired stock. </p>
+
+---
+
+# Basic Trading Algorithm Project
+
+## Steps to Use
+
+1. **Install Requirements**  
+   - Ensure you have Python 3.12.2 installed.  
+   - Create and activate a virtual environment:  
+     ```bash
+     python -m venv venv
+     source venv/bin/activate  # On Windows: venv\Scripts\activate
+     ```
+   - Install the required dependencies:  
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+2. **Get an AlphaVantage API Key**  
+   - Visit [AlphaVantage API Key Signup](https://www.alphavantage.co/support/#api-key) and sign up for a free API key.  
+
+3. **Set Up the `.env` File**  
+   - Create a file named `.env` in the project folder.  
+   - Add your AlphaVantage API key in this format:  
+     ```
+     ALPHAVANTAGE_API_KEY=<YOUR_API_KEY>
+     ```
+
+4. **Run the Program**  
+   - Open the `main.py` file to configure the following settings:  
+     - **Stock Ticker:** Change the stock symbol (default is `AAPL`):  
+       ```python
+       stock_ticker = 'AAPL'
+       ```
+     - **Data Option:** Choose `full` for full historical data or `compact` for the last 100 data points:  
+       ```python
+       data_option = 'full'
+       ```
+     - **Limit Rows:** Adjust the number of rows to analyze (default is 1,000):  
+       ```python
+       data = data.head(1000)
+       ```
+   - Save your changes and run the program:  
+     ```bash
+     python main.py
+     ```
+
+5. **Analyze the Results**  
+   - The program saves stock data to the `CSV_data_copies` folder.  
+   - It also calculates signals (buy/sell) and displays a chart of strategy returns.  
+
+---
+
+### Troubleshooting
+
+- **Missing `.env` File:**  
+  If the `.env` file is missing, the program will show:  
+  ```plaintext
+  Error: .env file not found. Please create a .env file with your API key.
+
 
 ---
 

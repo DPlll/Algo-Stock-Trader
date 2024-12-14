@@ -27,13 +27,12 @@ print("ENV & API key loaded successfully.")
 # Create a time series object with the API key and set the output format to pandas
 ts = TimeSeries(key=API_KEY, output_format='pandas')
 
-# Get the data for the stock of your choice
+# --- Get the data for the stock of your choice --- #
 stock_ticker = 'APPL' # Change this to the stock ticker of your choice to pull data for that stock
 data_option = 'full' # Change this to 'full' for entire historical dataset keep 'compact' for the latest 100 data points
 data, meta_data = ts.get_daily(symbol= stock_ticker, outputsize= data_option)
 if data.empty:
     raise ValueError(f"Error: No data found on AlphaVantage for {stock_ticker}. Please check the stock ticker symbol.")
-
 # Limit the data to the first 1,000 rows
 data = data.head(1000)  # Take the first 1000 data points only
 
