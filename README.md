@@ -2,7 +2,7 @@
 
 ---
 
-![Logo](b1deb98a-13e6-4496-be39-0d01353a43f4.webp)
+![Logo](logo.webp)
 
 <p align="center"> Honors by Contract Term Project for Advance Software Applications for Economics. Use alpha advantage API to collect, organize, and analyze stock data with a basic trading stategy. Then see how your strategy performs with the data collected on desired stock. </p>
 
